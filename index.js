@@ -5,12 +5,13 @@ const pino = require('pino');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const AUTH_DIR = 'auth_info';
 
 let sock;
 
 // Initialize WhatsApp connection
 async function connectToWhatsApp() {
-    const { state, saveCreds } = await useMultiFileAuthState('auth_info');
+    const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
     
     sock = makeWASocket({
         auth: state,
@@ -61,7 +62,14 @@ app.get('/send', async (req, res) => {
     
     try {
         // Format number to include country code if not present
-        let formattedNumber = number.replace(/[^\d]/g, '');
+        const formattedNumber = number.replace(/[^\d]/g, '');
+        
+        // Validate phone number
+        if (!formattedNumber || formattedNumber.length < 10) {
+            return res.status(400).json({ 
+                error: 'Invalid phone number. Must contain at least 10 digits.' 
+            });
+        }
         
         // Add @s.whatsapp.net suffix
         const jid = formattedNumber + '@s.whatsapp.net';
@@ -86,7 +94,7 @@ app.get('/send', async (req, res) => {
 app.get('/', (req, res) => {
     res.json({ 
         status: 'running', 
-        connected: sock ? true : false 
+        connected: !!sock 
     });
 });
 

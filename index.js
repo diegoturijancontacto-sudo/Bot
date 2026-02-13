@@ -6,6 +6,7 @@ const pino = require('pino');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const AUTH_DIR = 'auth_info';
+const PHONE_NUMBER = process.env.PHONE_NUMBER || ''; // Phone number for pairing code (with country code, no + or -)
 
 let sock;
 let reconnectAttempts = 0;
@@ -33,13 +34,47 @@ async function connectToWhatsApp() {
         }
     });
 
+    // Request pairing code if phone number is provided and not registered
+    if (PHONE_NUMBER) {
+        // Delay to ensure WebSocket connection is fully established before requesting pairing code
+        setTimeout(async () => {
+            try {
+                // Check registration state at execution time to avoid race conditions
+                if (!state.creds.registered) {
+                    const code = await sock.requestPairingCode(PHONE_NUMBER);
+                    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                    console.log('🔐 PAIRING CODE (8-digit code):');
+                    console.log('   ' + code);
+                    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                    console.log('To connect:');
+                    console.log('1. Open WhatsApp on your phone');
+                    console.log('2. Go to Settings > Linked Devices');
+                    console.log('3. Tap "Link a Device"');
+                    console.log('4. Enter this code: ' + code);
+                    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                }
+            } catch (error) {
+                console.error('Error requesting pairing code:', error.message);
+            }
+        }, 3000);
+    }
+
     // Handle QR code
     sock.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect, qr } = update;
         
         if (qr) {
-            console.log('QR Code received, scan with WhatsApp:');
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            console.log('📱 QR Code received, scan with WhatsApp:');
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
             qrcode.generate(qr, { small: true });
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            
+            // Inform user about pairing code option if phone number is configured
+            if (PHONE_NUMBER) {
+                console.log('OR use the 8-digit pairing code (displayed above or in console)');
+                console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+            }
         }
         
         if (connection === 'close') {

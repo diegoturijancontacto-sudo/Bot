@@ -36,11 +36,33 @@ The server will start on port 3000 (or the port specified in `PORT` environment 
 
 ### First Time Setup
 
+#### Option 1: Using QR Code
+
 1. Run the bot with `npm start`
 2. Scan the QR code displayed in the terminal with your WhatsApp mobile app
 3. Go to WhatsApp > Settings > Linked Devices > Link a Device
 4. Scan the QR code
 5. Once connected, the bot is ready to receive API requests
+
+#### Option 2: Using 8-Digit Pairing Code
+
+1. Set your phone number as an environment variable (include country code, no + or - symbols):
+   ```bash
+   export PHONE_NUMBER=1234567890
+   npm start
+   ```
+   Or on Windows:
+   ```cmd
+   set PHONE_NUMBER=1234567890
+   npm start
+   ```
+
+2. An 8-digit pairing code will be displayed in the terminal
+3. Go to WhatsApp > Settings > Linked Devices > Link a Device
+4. Enter the 8-digit code shown in the terminal
+5. Once connected, the bot is ready to receive API requests
+
+**Note:** Both the QR code and pairing code (if phone number is set) will be displayed. You can use either method to connect.
 
 ### API Endpoints
 
@@ -77,6 +99,7 @@ Response:
 
 - `PORT`: Set via environment variable (default: 3000)
 - `AUTH_DIR`: Authentication state directory (default: auth_info)
+- `PHONE_NUMBER`: Optional phone number for pairing code authentication (must include country code without + or - symbols, e.g., 1234567890)
 
 ## Dependencies
 

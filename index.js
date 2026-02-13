@@ -27,7 +27,7 @@ async function connectToWhatsApp() {
         },
         printQRInTerminal: false,
         logger: pino({ level: 'silent' }),
-        browser: ['WhatsApp Bot', 'Chrome', '10.0'],
+        browser: ['Ubuntu', 'Chrome', '20.0.04'],
         getMessage: async (key) => {
             return { conversation: '' };
         }

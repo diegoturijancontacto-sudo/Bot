@@ -35,20 +35,24 @@ async function connectToWhatsApp() {
     });
 
     // Request pairing code if phone number is provided and not registered
-    if (PHONE_NUMBER && !state.creds.registered) {
+    if (PHONE_NUMBER) {
+        // Delay to ensure WebSocket connection is fully established before requesting pairing code
         setTimeout(async () => {
             try {
-                const code = await sock.requestPairingCode(PHONE_NUMBER);
-                console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-                console.log('🔐 PAIRING CODE (8-digit code):');
-                console.log('   ' + code);
-                console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-                console.log('To connect:');
-                console.log('1. Open WhatsApp on your phone');
-                console.log('2. Go to Settings > Linked Devices');
-                console.log('3. Tap "Link a Device"');
-                console.log('4. Enter this code: ' + code);
-                console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                // Check registration state at execution time to avoid race conditions
+                if (!state.creds.registered) {
+                    const code = await sock.requestPairingCode(PHONE_NUMBER);
+                    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                    console.log('🔐 PAIRING CODE (8-digit code):');
+                    console.log('   ' + code);
+                    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                    console.log('To connect:');
+                    console.log('1. Open WhatsApp on your phone');
+                    console.log('2. Go to Settings > Linked Devices');
+                    console.log('3. Tap "Link a Device"');
+                    console.log('4. Enter this code: ' + code);
+                    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                }
             } catch (error) {
                 console.error('Error requesting pairing code:', error.message);
             }
@@ -66,9 +70,9 @@ async function connectToWhatsApp() {
             qrcode.generate(qr, { small: true });
             console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
             
-            // Also display pairing code if phone number is provided
-            if (PHONE_NUMBER && !state.creds.registered) {
-                console.log('OR use the 8-digit pairing code displayed above');
+            // Inform user about pairing code option if phone number is configured
+            if (PHONE_NUMBER) {
+                console.log('OR use the 8-digit pairing code (displayed above or in console)');
                 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
             }
         }

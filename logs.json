@@ -1,0 +1,100 @@
+2026-02-13T04:55:58.40485035Z     headers: {}
+2026-02-13T04:55:58.40485254Z   }
+2026-02-13T04:55:58.40485469Z } , reconnecting: true
+2026-02-13T04:56:02.94063773Z Connection closed due to Error: Connection Failure
+2026-02-13T04:56:02.94065547Z     at WebSocketClient.<anonymous> (file:///opt/render/project/src/node_modules/@whiskeysockets/baileys/lib/Socket/socket.js:515:13)
+2026-02-13T04:56:02.94065905Z     at WebSocketClient.emit (node:events:519:28)
+2026-02-13T04:56:02.94066205Z     at file:///opt/render/project/src/node_modules/@whiskeysockets/baileys/lib/Socket/socket.js:230:35
+2026-02-13T04:56:02.94066393Z     at Object.decodeFrame (file:///opt/render/project/src/node_modules/@whiskeysockets/baileys/lib/Utils/noise-handler.js:140:17)
+2026-02-13T04:56:02.94066703Z     at process.processTicksAndRejections (node:internal/process/task_queues:105:5) {
+2026-02-13T04:56:02.94066888Z   data: { reason: '405', location: 'cco' },
+2026-02-13T04:56:02.940670671Z   isBoom: true,
+2026-02-13T04:56:02.940675311Z   isServer: false,
+2026-02-13T04:56:02.940678511Z   output: {
+2026-02-13T04:56:02.940681341Z     statusCode: 405,
+2026-02-13T04:56:02.940684221Z     payload: {
+2026-02-13T04:56:02.940687031Z       statusCode: 405,
+2026-02-13T04:56:02.940690161Z       error: 'Method Not Allowed',
+2026-02-13T04:56:02.940692931Z       message: 'Connection Failure'
+2026-02-13T04:56:02.940705411Z     },
+2026-02-13T04:56:02.940707641Z     headers: {}
+2026-02-13T04:56:02.940709471Z   }
+2026-02-13T04:56:02.940711181Z } , reconnecting: true
+2026-02-13T04:56:04.64901039Z Connection closed due to Error: Connection Failure
+2026-02-13T04:56:04.64902853Z     at WebSocketClient.<anonymous> (file:///opt/render/project/src/node_modules/@whiskeysockets/baileys/lib/Socket/socket.js:515:13)
+2026-02-13T04:56:04.64903212Z     at WebSocketClient.emit (node:events:519:28)
+2026-02-13T04:56:04.649034811Z     at file:///opt/render/project/src/node_modules/@whiskeysockets/baileys/lib/Socket/socket.js:230:35
+2026-02-13T04:56:04.649037271Z     at Object.decodeFrame (file:///opt/render/project/src/node_modules/@whiskeysockets/baileys/lib/Utils/noise-handler.js:140:17)
+2026-02-13T04:56:04.649039911Z     at process.processTicksAndRejections (node:internal/process/task_queues:105:5) {
+2026-02-13T04:56:04.649042901Z   data: { reason: '405', location: 'lla' },
+2026-02-13T04:56:04.649046771Z   isBoom: true,
+2026-02-13T04:56:04.649051041Z   isServer: false,
+2026-02-13T04:56:04.649054641Z   output: {
+2026-02-13T04:56:04.649058121Z     statusCode: 405,
+2026-02-13T04:56:04.649061531Z     payload: {
+2026-02-13T04:56:04.649064981Z       statusCode: 405,
+2026-02-13T04:56:04.649068191Z       error: 'Method Not Allowed',
+2026-02-13T04:56:04.649071911Z       message: 'Connection Failure'
+2026-02-13T04:56:04.649075451Z     },
+2026-02-13T04:56:04.649098182Z     headers: {}
+2026-02-13T04:56:04.649100532Z   }
+2026-02-13T04:56:04.649102702Z } , reconnecting: true
+2026-02-13T04:56:08.831509705Z Connection closed due to Error: Connection Failure
+2026-02-13T04:56:08.831536085Z     at WebSocketClient.<anonymous> (file:///opt/render/project/src/node_modules/@whiskeysockets/baileys/lib/Socket/socket.js:515:13)
+2026-02-13T04:56:08.831542895Z     at WebSocketClient.emit (node:events:519:28)
+2026-02-13T04:56:08.831549465Z     at file:///opt/render/project/src/node_modules/@whiskeysockets/baileys/lib/Socket/socket.js:230:35
+2026-02-13T04:56:08.831553816Z     at Object.decodeFrame (file:///opt/render/project/src/node_modules/@whiskeysockets/baileys/lib/Utils/noise-handler.js:140:17)
+2026-02-13T04:56:08.831557966Z     at process.processTicksAndRejections (node:internal/process/task_queues:105:5) {
+2026-02-13T04:56:08.831561516Z   data: { reason: '405', location: 'atn' },
+2026-02-13T04:56:08.831565176Z   isBoom: true,
+2026-02-13T04:56:08.831569376Z   isServer: false,
+2026-02-13T04:56:08.831573216Z   output: {
+2026-02-13T04:56:08.831576886Z     statusCode: 405,
+2026-02-13T04:56:08.831580466Z     payload: {
+2026-02-13T04:56:08.831584026Z       statusCode: 405,
+2026-02-13T04:56:08.831587566Z       error: 'Method Not Allowed',
+2026-02-13T04:56:08.831591066Z       message: 'Connection Failure'
+2026-02-13T04:56:08.831594606Z     },
+2026-02-13T04:56:08.831598226Z     headers: {}
+2026-02-13T04:56:08.831601777Z   }
+2026-02-13T04:56:08.831605377Z } , reconnecting: true
+2026-02-13T04:56:10.85405173Z Connection closed due to Error: Connection Failure
+2026-02-13T04:56:10.854075321Z     at WebSocketClient.<anonymous> (file:///opt/render/project/src/node_modules/@whiskeysockets/baileys/lib/Socket/socket.js:515:13)
+2026-02-13T04:56:10.854108252Z     at WebSocketClient.emit (node:events:519:28)
+2026-02-13T04:56:10.854115202Z     at file:///opt/render/project/src/node_modules/@whiskeysockets/baileys/lib/Socket/socket.js:230:35
+2026-02-13T04:56:10.854119012Z     at Object.decodeFrame (file:///opt/render/project/src/node_modules/@whiskeysockets/baileys/lib/Utils/noise-handler.js:140:17)
+2026-02-13T04:56:10.854125092Z     at process.processTicksAndRejections (node:internal/process/task_queues:105:5) {
+2026-02-13T04:56:10.854139632Z   data: { reason: '405', location: 'frc' },
+2026-02-13T04:56:10.854141883Z   isBoom: true,
+2026-02-13T04:56:10.854144532Z   isServer: false,
+2026-02-13T04:56:10.854146632Z   output: {
+2026-02-13T04:56:10.854148732Z     statusCode: 405,
+2026-02-13T04:56:10.854150833Z     payload: {
+2026-02-13T04:56:10.854152983Z       statusCode: 405,
+2026-02-13T04:56:10.854155123Z       error: 'Method Not Allowed',
+2026-02-13T04:56:10.854157163Z       message: 'Connection Failure'
+2026-02-13T04:56:10.854159253Z     },
+2026-02-13T04:56:10.854161333Z     headers: {}
+2026-02-13T04:56:10.854163443Z   }
+2026-02-13T04:56:10.854165673Z } , reconnecting: true
+2026-02-13T04:56:15.628968674Z Connection closed due to Error: Connection Failure
+2026-02-13T04:56:15.628991234Z     at WebSocketClient.<anonymous> (file:///opt/render/project/src/node_modules/@whiskeysockets/baileys/lib/Socket/socket.js:515:13)
+2026-02-13T04:56:15.628997134Z     at WebSocketClient.emit (node:events:519:28)
+2026-02-13T04:56:15.629002475Z     at file:///opt/render/project/src/node_modules/@whiskeysockets/baileys/lib/Socket/socket.js:230:35
+2026-02-13T04:56:15.629006795Z     at Object.decodeFrame (file:///opt/render/project/src/node_modules/@whiskeysockets/baileys/lib/Utils/noise-handler.js:140:17)
+2026-02-13T04:56:15.629011895Z     at process.processTicksAndRejections (node:internal/process/task_queues:105:5) {
+2026-02-13T04:56:15.629016215Z   data: { reason: '405', location: 'atn' },
+2026-02-13T04:56:15.629020425Z   isBoom: true,
+2026-02-13T04:56:15.629025325Z   isServer: false,
+2026-02-13T04:56:15.629029815Z   output: {
+2026-02-13T04:56:15.629034495Z     statusCode: 405,
+2026-02-13T04:56:15.629038935Z     payload: {
+2026-02-13T04:56:15.629043425Z       statusCode: 405,
+2026-02-13T04:56:15.629048265Z       error: 'Method Not Allowed',
+2026-02-13T04:56:15.629052726Z       message: 'Connection Failure'
+2026-02-13T04:56:15.629057076Z     },
+2026-02-13T04:56:15.629061466Z     headers: {}
+2026-02-13T04:56:15.629065846Z   }
+2026-02-13T04:56:15.629070596Z } , reconnecting: true
+2026-02-13T05:06:19.401170086Z ==> Detected service running on port 3000
+2026-02-13T05:06:19.501496753Z ==> Docs on specifying a port: https://render.com/docs/web-services#port-binding

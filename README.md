@@ -91,3 +91,34 @@ Response:
 - The bot automatically reconnects if the connection is lost (unless logged out)
 - Phone numbers must contain at least 10 digits
 - Make sure to keep the `auth_info` directory secure and don't commit it to version control
+
+## Troubleshooting
+
+### 405 Method Not Allowed Error
+
+If you encounter a "405 Method Not Allowed" or "Connection Failure" error with reason '405', this is typically due to WhatsApp servers rejecting the connection. The bot now includes several fixes:
+
+1. **Automatic version detection** - The bot fetches the latest WhatsApp Web version for compatibility
+2. **Proper browser configuration** - Uses correct browser/device identification
+3. **Exponential backoff** - Retries with increasing delays (2s, 4s, 8s, 16s, 30s)
+4. **Max retry limit** - Stops after 5 failed attempts to prevent endless loops
+
+**Additional solutions:**
+- Delete the `auth_info` directory and scan the QR code again
+- Ensure your server/computer has a stable internet connection
+- Check if WhatsApp is experiencing service issues
+- Make sure you're using the latest version of the bot code
+
+### Network Connectivity Issues
+
+If you see `ENOTFOUND web.whatsapp.com` errors:
+- Check your internet connection
+- Verify that your firewall/network allows outbound WebSocket connections
+- Ensure DNS resolution is working properly (`ping web.whatsapp.com`)
+
+### Connection Keeps Dropping
+
+The bot implements automatic reconnection with exponential backoff:
+- Maximum of 5 reconnection attempts
+- If max attempts are reached, restart the bot manually
+- Check the logs for specific error messages

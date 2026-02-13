@@ -1,4 +1,4 @@
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, makeCacheableSignalKeyStore } = require('@whiskeysockets/baileys');
 const express = require('express');
 const qrcode = require('qrcode-terminal');
 const pino = require('pino');
@@ -8,15 +8,29 @@ const PORT = process.env.PORT || 3000;
 const AUTH_DIR = 'auth_info';
 
 let sock;
+let reconnectAttempts = 0;
+const MAX_RECONNECT_ATTEMPTS = 5;
 
 // Initialize WhatsApp connection
 async function connectToWhatsApp() {
     const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
     
+    // Fetch latest Baileys version for compatibility
+    const { version, isLatest } = await fetchLatestBaileysVersion();
+    console.log(`Using WA v${version.join('.')}, isLatest: ${isLatest}`);
+    
     sock = makeWASocket({
-        auth: state,
+        version,
+        auth: {
+            creds: state.creds,
+            keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' }))
+        },
         printQRInTerminal: false,
-        logger: pino({ level: 'silent' })
+        logger: pino({ level: 'silent' }),
+        browser: ['WhatsApp Bot', 'Chrome', '10.0'],
+        getMessage: async (key) => {
+            return { conversation: '' };
+        }
     });
 
     // Handle QR code
@@ -29,14 +43,24 @@ async function connectToWhatsApp() {
         }
         
         if (connection === 'close') {
-            const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
+            const statusCode = lastDisconnect?.error?.output?.statusCode;
+            const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+            
             console.log('Connection closed due to', lastDisconnect?.error, ', reconnecting:', shouldReconnect);
             
-            if (shouldReconnect) {
-                connectToWhatsApp();
+            if (shouldReconnect && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                reconnectAttempts++;
+                const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
+                console.log(`Reconnecting attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS} in ${delay}ms...`);
+                setTimeout(() => connectToWhatsApp(), delay);
+            } else if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
+                console.error('Max reconnection attempts reached. Please restart the bot.');
+            } else {
+                console.log('Logged out. Please restart the bot to scan QR code again.');
             }
         } else if (connection === 'open') {
             console.log('Connected to WhatsApp successfully!');
+            reconnectAttempts = 0; // Reset counter on successful connection
         }
     });
 

@@ -8,15 +8,16 @@ const {
 const express = require('express');
 const qrcode = require('qrcode-terminal');
 const pino = require('pino');
-const cors = require('cors'); // Necesario para conectar con tu HTML
+const cors = require('cors');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const AUTH_DIR = 'auth_info';
 
-// Middlewares
+// Middlewares para permitir peticiones desde tu HTML
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 let sock;
 let reconnectAttempts = 0;
@@ -26,7 +27,7 @@ async function connectToWhatsApp() {
     const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
     const { version, isLatest } = await fetchLatestBaileysVersion();
     
-    console.log(`Usando WA v${version.join('.')}, isLatest: ${isLatest}`);
+    console.log(`Versión de WhatsApp: ${version.join('.')}`);
 
     sock = makeWASocket({
         version,
@@ -36,43 +37,35 @@ async function connectToWhatsApp() {
         },
         printQRInTerminal: false,
         logger: pino({ level: 'silent' }),
-        // Configuración para evitar el error 405 en Termux/Linux
-        browser: ['Ubuntu', 'Chrome', '20.0.04'], 
+        // Identificación del cliente
+        browser: ['Windows', 'Chrome', '11.0.0'], 
         generateHighQualityLinkPreview: true,
-        getMessage: async (key) => {
-            return { conversation: '' };
-        }
     });
 
+    // Monitoreo de la conexión
     sock.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect, qr } = update;
         
         if (qr) {
-            console.log('--- NUEVO CÓDIGO QR ---');
-            console.log('Escanea con tu WhatsApp:');
+            console.log('📱 Escanea el código QR para vincular:');
             qrcode.generate(qr, { small: true });
         }
         
         if (connection === 'close') {
             const statusCode = lastDisconnect?.error?.output?.statusCode;
-            
-            // Si el error es 405, usualmente es por sesión corrupta o IP bloqueada temporalmente
-            if (statusCode === 405) {
-                console.error('❌ Error 405 detectado. Intenta borrar la carpeta "auth_info" y reiniciar.');
-            }
-
             const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+            
+            console.log('Conexión cerrada. Motivo:', lastDisconnect?.error?.message);
             
             if (shouldReconnect && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
                 reconnectAttempts++;
-                const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
-                console.log(`Reconectando (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS}) en ${delay}ms...`);
-                setTimeout(() => connectToWhatsApp(), delay);
+                console.log(`Reintentando conexión (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
+                setTimeout(() => connectToWhatsApp(), 5000);
             } else {
-                console.log('Conexión terminada. Si no estás logueado, borra auth_info y escanea de nuevo.');
+                console.log('No se pudo reconectar. Verifica tu conexión o reinicia el bot.');
             }
         } else if (connection === 'open') {
-            console.log('✅ ¡WhatsApp Conectado con éxito!');
+            console.log('✅ Conexión establecida con éxito.');
             reconnectAttempts = 0;
         }
     });
@@ -80,40 +73,38 @@ async function connectToWhatsApp() {
     sock.ev.on('creds.update', saveCreds);
 }
 
-// Ruta para enviar mensajes (Compatible con el fetch de tu HTML)
+// ENDPOINT PARA EL HTML
 app.get('/send', async (req, res) => {
     const { number, message } = req.query;
     
     if (!number || !message) {
-        return res.status(400).json({ error: 'Faltan parámetros: number y message' });
+        return res.status(400).json({ error: 'Faltan parámetros: número y mensaje.' });
     }
     
-    if (!sock || reconnectAttempts > 0) {
-        return res.status(503).json({ error: 'WhatsApp no está listo o se está reconectando' });
+    if (!sock) {
+        return res.status(503).json({ error: 'El servidor de WhatsApp no está listo.' });
     }
     
     try {
-        const formattedNumber = number.replace(/[^\d]/g, '');
-        const jid = formattedNumber + '@s.whatsapp.net';
+        // Limpiar el número y formatearlo
+        const cleanNumber = number.replace(/[^\d]/g, '');
+        const jid = `${cleanNumber}@s.whatsapp.net`;
         
         await sock.sendMessage(jid, { text: message });
         
         res.json({ 
             success: true, 
-            to: formattedNumber,
-            message: 'Mensaje enviado' 
+            to: cleanNumber,
+            info: 'Mensaje enviado correctamente' 
         });
     } catch (error) {
-        console.error('Error al enviar:', error);
-        res.status(500).json({ error: 'Error al enviar el mensaje', details: error.message });
+        console.error('Error al enviar mensaje:', error);
+        res.status(500).json({ error: 'Error interno al enviar el mensaje.' });
     }
 });
 
-app.get('/', (req, res) => {
-    res.json({ status: 'running', connected: !!sock && reconnectAttempts === 0 });
-});
-
+// Inicio del servidor
 app.listen(PORT, () => {
-    console.log(`Servidor iniciado en http://localhost:${PORT}`);
+    console.log(`🚀 Servidor listo en http://localhost:${PORT}`);
     connectToWhatsApp();
 });

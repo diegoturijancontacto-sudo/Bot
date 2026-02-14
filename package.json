@@ -15,7 +15,7 @@
   "license": "ISC",
   "dependencies": {
     "@whiskeysockets/baileys": "^6.7.9",
-    "@whiskeysockets/baileys-mongodb-auth": "^1.0.1",
+    "baileys-mongodb-auth": "^1.0.1",
     "mongodb": "^6.3.0",
     "express": "^4.21.2",
     "qrcode-terminal": "^0.12.0",

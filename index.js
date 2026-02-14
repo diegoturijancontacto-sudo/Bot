@@ -124,31 +124,41 @@ app.get('/send', async (req, res) => {
         let recipientId;
         let isGroup = false;
         
-        // Check if it's a group ID (contains '-' and '@g.us' or just ends with '@g.us')
+        // Check if it's a group ID
+        // Group IDs have format: 123456789-1234567890@g.us or 123456789-1234567890
+        // They consist of exactly two sets of digits separated by a single dash
         if (number.includes('@g.us')) {
             // Group ID already formatted
             jid = number;
             recipientId = number;
             isGroup = true;
-        } else if (number.includes('-')) {
-            // Likely a group ID without suffix (format: 123456789-123456789)
-            const cleanGroupId = number.replace(/[^\d-]/g, '');
-            jid = cleanGroupId + '@g.us';
-            recipientId = cleanGroupId;
-            isGroup = true;
         } else {
-            // Regular phone number
-            const formattedNumber = number.replace(/[^\d]/g, '');
+            // Clean the input - remove all non-digit and non-dash characters
+            const cleaned = number.replace(/[^\d-]/g, '');
             
-            // Validate phone number
-            if (!formattedNumber || formattedNumber.length < 10) {
-                return res.status(400).json({ 
-                    error: 'Invalid phone number. Must contain at least 10 digits.' 
-                });
+            // Check if it matches group ID pattern: exactly one dash with digits on both sides
+            // Group IDs typically have format like 120363029876543210-1234567890
+            const groupIdMatch = cleaned.match(/^(\d{10,})-(\d{10,})$/);
+            
+            if (groupIdMatch) {
+                // It's a group ID
+                jid = cleaned + '@g.us';
+                recipientId = cleaned;
+                isGroup = true;
+            } else {
+                // Regular phone number - remove all non-digits including dashes
+                const formattedNumber = number.replace(/[^\d]/g, '');
+                
+                // Validate phone number
+                if (!formattedNumber || formattedNumber.length < 10) {
+                    return res.status(400).json({ 
+                        error: 'Invalid phone number. Must contain at least 10 digits.' 
+                    });
+                }
+                
+                jid = formattedNumber + '@s.whatsapp.net';
+                recipientId = formattedNumber;
             }
-            
-            jid = formattedNumber + '@s.whatsapp.net';
-            recipientId = formattedNumber;
         }
         
         await sock.sendMessage(jid, { text: message });

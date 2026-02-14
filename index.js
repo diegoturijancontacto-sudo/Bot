@@ -120,25 +120,54 @@ app.get('/send', async (req, res) => {
     }
     
     try {
-        // Format number to include country code if not present
-        const formattedNumber = number.replace(/[^\d]/g, '');
+        let jid;
+        let recipientId;
+        let isGroup = false;
         
-        // Validate phone number
-        if (!formattedNumber || formattedNumber.length < 10) {
-            return res.status(400).json({ 
-                error: 'Invalid phone number. Must contain at least 10 digits.' 
-            });
+        // Check if it's a group ID
+        // Group IDs have format: 1234567890-1234567890@g.us or 1234567890-1234567890
+        // They consist of exactly two sets of digits separated by a single dash
+        if (number.includes('@g.us')) {
+            // Group ID already formatted
+            jid = number;
+            recipientId = number;
+            isGroup = true;
+        } else {
+            // Clean the input - remove all non-digit and non-dash characters
+            const cleaned = number.replace(/[^\d-]/g, '');
+            
+            // Check if it matches group ID pattern: exactly one dash with digits on both sides
+            // Group IDs typically have format like 1234567890-1234567890 (at least 10 digits on each side)
+            const groupIdMatch = cleaned.match(/^(\d{10,})-(\d{10,})$/);
+            
+            if (groupIdMatch) {
+                // It's a group ID
+                jid = cleaned + '@g.us';
+                recipientId = cleaned;
+                isGroup = true;
+            } else {
+                // Regular phone number - remove all non-digits including dashes
+                const formattedNumber = number.replace(/[^\d]/g, '');
+                
+                // Validate phone number
+                if (!formattedNumber || formattedNumber.length < 10) {
+                    return res.status(400).json({ 
+                        error: 'Invalid phone number. Must contain at least 10 digits.' 
+                    });
+                }
+                
+                jid = formattedNumber + '@s.whatsapp.net';
+                recipientId = formattedNumber;
+            }
         }
-        
-        // Add @s.whatsapp.net suffix
-        const jid = formattedNumber + '@s.whatsapp.net';
         
         await sock.sendMessage(jid, { text: message });
         
         res.json({ 
             success: true, 
             message: 'Message sent successfully',
-            to: formattedNumber
+            to: recipientId,
+            type: isGroup ? 'group' : 'individual'
         });
     } catch (error) {
         console.error('Error sending message:', error);

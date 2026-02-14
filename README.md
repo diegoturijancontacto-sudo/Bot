@@ -8,6 +8,7 @@ A simple WhatsApp bot built with Baileys library (without Puppeteer) that allows
 - Multi-device authentication support
 - QR code displayed in terminal for easy setup
 - Express REST API for sending messages
+- **Support for sending messages to both individuals and groups**
 - Automatic reconnection on connection loss
 - Health check endpoint
 
@@ -74,14 +75,14 @@ Returns the bot status and connection state.
 
 #### Send Message
 ```
-GET /send?number=<phone_number>&message=<text>
+GET /send?number=<phone_number_or_group_id>&message=<text>
 ```
 
 Parameters:
-- `number`: Phone number with country code (e.g., 1234567890)
+- `number`: Phone number with country code (e.g., 1234567890) OR WhatsApp group ID (e.g., 1234567890-1234567890 or 1234567890-1234567890@g.us)
 - `message`: Text message to send
 
-Example:
+**Example - Send to Individual:**
 ```bash
 curl "http://localhost:3000/send?number=1234567890&message=Hello%20World"
 ```
@@ -91,9 +92,31 @@ Response:
 {
   "success": true,
   "message": "Message sent successfully",
-  "to": "1234567890"
+  "to": "1234567890",
+  "type": "individual"
 }
 ```
+
+**Example - Send to Group:**
+```bash
+curl "http://localhost:3000/send?number=1234567890-1234567890&message=Hello%20Group"
+```
+
+Response:
+```json
+{
+  "success": true,
+  "message": "Message sent successfully",
+  "to": "1234567890-1234567890",
+  "type": "group"
+}
+```
+
+**Getting Group ID:**
+To get a group ID, you can:
+1. Use WhatsApp Web developer tools to inspect group messages
+2. Forward a message from the group and check the metadata
+3. Use Baileys methods to list groups programmatically (the bot owner must be a member)
 
 ## Configuration
 
@@ -113,6 +136,8 @@ Response:
 - Authentication state is saved in the `auth_info` directory
 - The bot automatically reconnects if the connection is lost (unless logged out)
 - Phone numbers must contain at least 10 digits
+- Group IDs typically follow the format `1234567890-1234567890` (with or without `@g.us` suffix)
+- The bot must be a member of a group to send messages to it
 - Make sure to keep the `auth_info` directory secure and don't commit it to version control
 
 ## Troubleshooting

@@ -1,24 +1,46 @@
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, makeCacheableSignalKeyStore } = require('@whiskeysockets/baileys');
+const { 
+    default: makeWASocket, 
+    DisconnectReason, 
+    fetchLatestBaileysVersion, 
+    makeCacheableSignalKeyStore 
+} = require('@whiskeysockets/baileys');
+const { useMongoDBAuthState } = require('@whiskeysockets/baileys-mongodb');
+const { MongoClient } = require('mongodb');
 const express = require('express');
 const qrcode = require('qrcode-terminal');
 const pino = require('pino');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const AUTH_DIR = 'auth_info';
-const PHONE_NUMBER = process.env.PHONE_NUMBER || ''; // Phone number for pairing code (with country code, no + or -)
+const PHONE_NUMBER = process.env.PHONE_NUMBER || ''; // Número para Pairing Code (ej: 521234567890)
+const MONGO_URL = process.env.MONGO_URL; // URL de conexión a MongoDB de Render
 
 let sock;
 let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 5;
 
-// Initialize WhatsApp connection
+/**
+ * Inicializa la conexión de WhatsApp con persistencia en MongoDB
+ */
 async function connectToWhatsApp() {
-    const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
+    if (!MONGO_URL) {
+        console.error('ERROR: La variable de entorno MONGO_URL no está configurada.');
+        process.exit(1);
+    }
+
+    // 1. Conexión a MongoDB
+    const mongoClient = new MongoClient(MONGO_URL);
+    await mongoClient.connect();
+    console.log('Conectado a MongoDB correctamente.');
     
-    // Fetch latest Baileys version for compatibility
+    const collection = mongoClient.db("whatsapp_bot").collection("auth");
+
+    // 2. Usar MongoDB para guardar el estado de la sesión
+    const { state, saveCreds } = await useMongoDBAuthState(collection);
+    
+    // Obtener la última versión de Baileys para evitar problemas de compatibilidad
     const { version, isLatest } = await fetchLatestBaileysVersion();
-    console.log(`Using WA v${version.join('.')}, isLatest: ${isLatest}`);
+    console.log(`Usando WA v${version.join('.')}, última versión: ${isLatest}`);
     
     sock = makeWASocket({
         version,
@@ -34,130 +56,98 @@ async function connectToWhatsApp() {
         }
     });
 
-    // Request pairing code if phone number is provided and not registered
-    if (PHONE_NUMBER) {
-        // Delay to ensure WebSocket connection is fully established before requesting pairing code
+    // Lógica para solicitar Pairing Code si el número está configurado y no hay sesión
+    if (PHONE_NUMBER && !state.creds.registered) {
         setTimeout(async () => {
             try {
-                // Check registration state at execution time to avoid race conditions
-                if (!state.creds.registered) {
-                    const code = await sock.requestPairingCode(PHONE_NUMBER);
-                    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-                    console.log('🔐 PAIRING CODE (8-digit code):');
-                    console.log('   ' + code);
-                    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-                    console.log('To connect:');
-                    console.log('1. Open WhatsApp on your phone');
-                    console.log('2. Go to Settings > Linked Devices');
-                    console.log('3. Tap "Link a Device"');
-                    console.log('4. Enter this code: ' + code);
-                    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-                }
+                const code = await sock.requestPairingCode(PHONE_NUMBER);
+                console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                console.log('🔐 CÓDIGO DE EMPAREJAMIENTO (8 dígitos):');
+                console.log('   ' + code);
+                console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+                console.log('Para conectar:');
+                console.log('1. Abre WhatsApp en tu teléfono');
+                console.log('2. Ve a Configuración > Dispositivos vinculados');
+                console.log('3. Toca en "Vincular un dispositivo"');
+                console.log('4. Toca en "Vincular con el número de teléfono" e ingresa el código');
+                console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
             } catch (error) {
-                console.error('Error requesting pairing code:', error.message);
+                console.error('Error al solicitar Pairing Code:', error.message);
             }
-        }, 3000);
+        }, 5000); // Esperar a que el socket esté listo
     }
 
-    // Handle QR code
+    // Manejo de actualizaciones de conexión
     sock.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect, qr } = update;
         
         if (qr) {
             console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-            console.log('📱 QR Code received, scan with WhatsApp:');
+            console.log('📱 Código QR recibido, escanea con WhatsApp:');
             console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
             qrcode.generate(qr, { small: true });
             console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-            
-            // Inform user about pairing code option if phone number is configured
-            if (PHONE_NUMBER) {
-                console.log('OR use the 8-digit pairing code (displayed above or in console)');
-                console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-            }
         }
         
         if (connection === 'close') {
             const statusCode = lastDisconnect?.error?.output?.statusCode;
             const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
             
-            console.log('Connection closed due to', lastDisconnect?.error, ', reconnecting:', shouldReconnect);
+            console.log('Conexión cerrada. Razón:', lastDisconnect?.error?.message, '| Reintentar:', shouldReconnect);
             
             if (shouldReconnect && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
                 reconnectAttempts++;
                 const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
-                console.log(`Reconnecting attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS} in ${delay}ms...`);
+                console.log(`Reintentando conexión (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS}) en ${delay}ms...`);
                 setTimeout(() => connectToWhatsApp(), delay);
             } else if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-                console.error('Max reconnection attempts reached. Please restart the bot.');
-            } else {
-                console.log('Logged out. Please restart the bot to scan QR code again.');
+                console.error('Máximo de intentos de reconexión alcanzado.');
             }
         } else if (connection === 'open') {
-            console.log('Connected to WhatsApp successfully!');
-            reconnectAttempts = 0; // Reset counter on successful connection
+            console.log('¡Conectado a WhatsApp exitosamente!');
+            reconnectAttempts = 0; 
         }
     });
 
-    // Save credentials whenever they update
+    // Guardar credenciales en MongoDB automáticamente
     sock.ev.on('creds.update', saveCreds);
 }
 
-// Express route to send messages
+/** * API Endpoint: Enviar Mensajes
+ * Ejemplo: /send?number=521234567890&message=Hola
+ */
 app.get('/send', async (req, res) => {
     const { number, message } = req.query;
     
     if (!number || !message) {
-        return res.status(400).json({ 
-            error: 'Missing required parameters: number and message' 
-        });
+        return res.status(400).json({ error: 'Faltan parámetros: number y message' });
     }
     
     if (!sock) {
-        return res.status(500).json({ 
-            error: 'WhatsApp connection not established' 
-        });
+        return res.status(500).json({ error: 'La conexión de WhatsApp no está activa' });
     }
     
     try {
         let jid;
-        let recipientId;
         let isGroup = false;
         
-        // Check if it's a group ID
-        // Group IDs have format: 1234567890-1234567890@g.us or 1234567890-1234567890
-        // They consist of exactly two sets of digits separated by a single dash
+        // Lógica de detección de Grupo vs Individual
         if (number.includes('@g.us')) {
-            // Group ID already formatted
             jid = number;
-            recipientId = number;
             isGroup = true;
         } else {
-            // Clean the input - remove all non-digit and non-dash characters
             const cleaned = number.replace(/[^\d-]/g, '');
-            
-            // Check if it matches group ID pattern: exactly one dash with digits on both sides
-            // Group IDs typically have format like 1234567890-1234567890 (at least 10 digits on each side)
             const groupIdMatch = cleaned.match(/^(\d{10,})-(\d{10,})$/);
             
             if (groupIdMatch) {
-                // It's a group ID
                 jid = cleaned + '@g.us';
-                recipientId = cleaned;
                 isGroup = true;
             } else {
-                // Regular phone number - remove all non-digits including dashes
                 const formattedNumber = number.replace(/[^\d]/g, '');
-                
-                // Validate phone number
-                if (!formattedNumber || formattedNumber.length < 10) {
-                    return res.status(400).json({ 
-                        error: 'Invalid phone number. Must contain at least 10 digits.' 
-                    });
+                if (formattedNumber.length < 10) {
+                    return res.status(400).json({ error: 'Número de teléfono inválido' });
                 }
-                
                 jid = formattedNumber + '@s.whatsapp.net';
-                recipientId = formattedNumber;
             }
         }
         
@@ -165,29 +155,26 @@ app.get('/send', async (req, res) => {
         
         res.json({ 
             success: true, 
-            message: 'Message sent successfully',
-            to: recipientId,
+            message: 'Mensaje enviado',
+            to: jid,
             type: isGroup ? 'group' : 'individual'
         });
     } catch (error) {
-        console.error('Error sending message:', error);
-        res.status(500).json({ 
-            error: 'Failed to send message', 
-            details: error.message 
-        });
+        console.error('Error al enviar mensaje:', error);
+        res.status(500).json({ error: 'Error al enviar', details: error.message });
     }
 });
 
-// Health check endpoint
+// Endpoint de estado
 app.get('/', (req, res) => {
     res.json({ 
-        status: 'running', 
-        connected: !!sock 
+        status: 'online', 
+        whatsapp_connected: !!sock?.user 
     });
 });
 
-// Start server
+// Iniciar servidor Express
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`Servidor HTTP en puerto ${PORT}`);
     connectToWhatsApp();
 });

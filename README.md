@@ -15,7 +15,7 @@ A simple WhatsApp bot built with Baileys library (without Puppeteer) that allows
 
 ## Prerequisites
 
-- Node.js (v14 or higher)
+- Node.js (v20 or higher)
 - MongoDB database (local or cloud, e.g., MongoDB Atlas)
 
 ## Installation

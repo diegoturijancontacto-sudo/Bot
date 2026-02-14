@@ -1,20 +1,45 @@
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, makeCacheableSignalKeyStore } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, DisconnectReason, fetchLatestBaileysVersion, makeCacheableSignalKeyStore } = require('@whiskeysockets/baileys');
+const { useMongoDBAuthState } = require('./mongoAuthState');
+const { MongoClient } = require('mongodb');
 const express = require('express');
 const qrcode = require('qrcode-terminal');
 const pino = require('pino');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const AUTH_DIR = 'auth_info';
 const PHONE_NUMBER = process.env.PHONE_NUMBER || ''; // Phone number for pairing code (with country code, no + or -)
+const MONGO_URL = process.env.MONGO_URL; // MongoDB connection URL
 
 let sock;
 let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 5;
+let mongoClient; // MongoDB client instance
 
 // Initialize WhatsApp connection
 async function connectToWhatsApp() {
-    const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
+    // Connect to MongoDB if not already connected
+    if (!mongoClient) {
+        if (!MONGO_URL) {
+            console.error('ERROR: MONGO_URL environment variable is not set!');
+            console.error('Please set MONGO_URL to your MongoDB connection string.');
+            process.exit(1);
+        }
+        
+        try {
+            mongoClient = new MongoClient(MONGO_URL);
+            await mongoClient.connect();
+            console.log('Connected to MongoDB successfully');
+        } catch (error) {
+            console.error('Failed to connect to MongoDB:', error.message);
+            process.exit(1);
+        }
+    }
+    
+    // Get MongoDB collection for auth state
+    const collection = mongoClient.db("whatsapp_bot").collection("auth");
+    
+    // Use MongoDB for authentication state
+    const { state, saveCreds } = await useMongoDBAuthState(collection);
     
     // Fetch latest Baileys version for compatibility
     const { version, isLatest } = await fetchLatestBaileysVersion();

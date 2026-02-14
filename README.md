@@ -1,16 +1,22 @@
 # WhatsApp Bot with Baileys
 
-A simple WhatsApp bot built with Baileys library (without Puppeteer) that allows you to send messages via HTTP API.
+A simple WhatsApp bot built with Baileys library (without Puppeteer) that allows you to send messages via HTTP API. Authentication state is stored in MongoDB for persistence and scalability.
 
 ## Features
 
 - WhatsApp connection using Baileys
 - Multi-device authentication support
+- **MongoDB-based authentication storage** (no local files)
 - QR code displayed in terminal for easy setup
 - Express REST API for sending messages
 - **Support for sending messages to both individuals and groups**
 - Automatic reconnection on connection loss
 - Health check endpoint
+
+## Prerequisites
+
+- Node.js (v14 or higher)
+- MongoDB database (local or cloud, e.g., MongoDB Atlas)
 
 ## Installation
 
@@ -25,6 +31,34 @@ cd Bot
 npm install
 ```
 
+3. Set up environment variables:
+
+**Required:**
+- `MONGO_URL`: Your MongoDB connection string
+
+**Optional:**
+- `PORT`: Server port (default: 3000)
+- `PHONE_NUMBER`: Phone number for pairing code authentication
+
+Example:
+```bash
+export MONGO_URL="mongodb://localhost:27017/whatsapp_bot"
+export PORT=3000
+export PHONE_NUMBER=1234567890
+```
+
+Or create a `.env` file:
+```
+MONGO_URL=mongodb://localhost:27017/whatsapp_bot
+PORT=3000
+PHONE_NUMBER=1234567890
+```
+
+**MongoDB Atlas Example:**
+```
+MONGO_URL=mongodb+srv://username:password@cluster.mongodb.net/whatsapp_bot?retryWrites=true&w=majority
+```
+
 ## Usage
 
 ### Starting the Bot
@@ -34,6 +68,8 @@ npm start
 ```
 
 The server will start on port 3000 (or the port specified in `PORT` environment variable).
+
+**Note:** The bot requires the `MONGO_URL` environment variable to be set. If not provided, the bot will exit with an error message.
 
 ### First Time Setup
 
@@ -120,9 +156,29 @@ To get a group ID, you can:
 
 ## Configuration
 
-- `PORT`: Set via environment variable (default: 3000)
-- `AUTH_DIR`: Authentication state directory (default: auth_info)
+Environment Variables:
+- `MONGO_URL`: **[Required]** MongoDB connection string (e.g., `mongodb://localhost:27017/whatsapp_bot` or MongoDB Atlas URI)
+- `PORT`: Server port (default: 3000)
 - `PHONE_NUMBER`: Optional phone number for pairing code authentication (must include country code without + or - symbols, e.g., 1234567890)
+
+## MongoDB Storage
+
+The bot stores authentication credentials in MongoDB instead of local files:
+- **Database**: `whatsapp_bot`
+- **Collection**: `auth`
+- **Benefits**:
+  - No local file storage needed
+  - Easy deployment on cloud platforms (e.g., Render, Heroku)
+  - Shared authentication across multiple instances
+  - Better persistence and reliability
+
+The MongoDB collection stores authentication keys with the following structure:
+```
+{
+  _id: "key_name",
+  value: "serialized_json_data"
+}
+```
 
 ## Dependencies
 
@@ -130,15 +186,17 @@ To get a group ID, you can:
 - `express`: Web framework for API
 - `qrcode-terminal`: QR code display in terminal
 - `pino`: Logging library
+- `mongodb`: MongoDB driver for authentication storage
 
 ## Notes
 
-- Authentication state is saved in the `auth_info` directory
+- Authentication state is saved in MongoDB (database: `whatsapp_bot`, collection: `auth`)
 - The bot automatically reconnects if the connection is lost (unless logged out)
 - Phone numbers must contain at least 10 digits
 - Group IDs typically follow the format `1234567890-1234567890` (with or without `@g.us` suffix)
 - The bot must be a member of a group to send messages to it
-- Make sure to keep the `auth_info` directory secure and don't commit it to version control
+- Make sure your MongoDB connection is secure and use authentication
+- **No local files**: The `auth_info` directory is no longer used
 
 ## Troubleshooting
 

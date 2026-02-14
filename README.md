@@ -79,7 +79,7 @@ GET /send?number=<phone_number_or_group_id>&message=<text>
 ```
 
 Parameters:
-- `number`: Phone number with country code (e.g., 1234567890) OR WhatsApp group ID (e.g., 123456789-1234567890 or 123456789-1234567890@g.us)
+- `number`: Phone number with country code (e.g., 1234567890) OR WhatsApp group ID (e.g., 1234567890-1234567890 or 1234567890-1234567890@g.us)
 - `message`: Text message to send
 
 **Example - Send to Individual:**
@@ -99,7 +99,7 @@ Response:
 
 **Example - Send to Group:**
 ```bash
-curl "http://localhost:3000/send?number=123456789-1234567890&message=Hello%20Group"
+curl "http://localhost:3000/send?number=1234567890-1234567890&message=Hello%20Group"
 ```
 
 Response:
@@ -107,7 +107,7 @@ Response:
 {
   "success": true,
   "message": "Message sent successfully",
-  "to": "123456789-1234567890",
+  "to": "1234567890-1234567890",
   "type": "group"
 }
 ```
@@ -136,7 +136,7 @@ To get a group ID, you can:
 - Authentication state is saved in the `auth_info` directory
 - The bot automatically reconnects if the connection is lost (unless logged out)
 - Phone numbers must contain at least 10 digits
-- Group IDs typically follow the format `123456789-1234567890` (with or without `@g.us` suffix)
+- Group IDs typically follow the format `1234567890-1234567890` (with or without `@g.us` suffix)
 - The bot must be a member of a group to send messages to it
 - Make sure to keep the `auth_info` directory secure and don't commit it to version control
 

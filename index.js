@@ -125,7 +125,7 @@ app.get('/send', async (req, res) => {
         let isGroup = false;
         
         // Check if it's a group ID
-        // Group IDs have format: 123456789-1234567890@g.us or 123456789-1234567890
+        // Group IDs have format: 1234567890-1234567890@g.us or 1234567890-1234567890
         // They consist of exactly two sets of digits separated by a single dash
         if (number.includes('@g.us')) {
             // Group ID already formatted
@@ -137,7 +137,7 @@ app.get('/send', async (req, res) => {
             const cleaned = number.replace(/[^\d-]/g, '');
             
             // Check if it matches group ID pattern: exactly one dash with digits on both sides
-            // Group IDs typically have format like 120363029876543210-1234567890
+            // Group IDs typically have format like 1234567890-1234567890 (at least 10 digits on each side)
             const groupIdMatch = cleaned.match(/^(\d{10,})-(\d{10,})$/);
             
             if (groupIdMatch) {

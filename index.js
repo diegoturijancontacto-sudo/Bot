@@ -120,25 +120,44 @@ app.get('/send', async (req, res) => {
     }
     
     try {
-        // Format number to include country code if not present
-        const formattedNumber = number.replace(/[^\d]/g, '');
+        let jid;
+        let recipientId;
+        let isGroup = false;
         
-        // Validate phone number
-        if (!formattedNumber || formattedNumber.length < 10) {
-            return res.status(400).json({ 
-                error: 'Invalid phone number. Must contain at least 10 digits.' 
-            });
+        // Check if it's a group ID (contains '-' and '@g.us' or just ends with '@g.us')
+        if (number.includes('@g.us')) {
+            // Group ID already formatted
+            jid = number;
+            recipientId = number;
+            isGroup = true;
+        } else if (number.includes('-')) {
+            // Likely a group ID without suffix (format: 123456789-123456789)
+            const cleanGroupId = number.replace(/[^\d-]/g, '');
+            jid = cleanGroupId + '@g.us';
+            recipientId = cleanGroupId;
+            isGroup = true;
+        } else {
+            // Regular phone number
+            const formattedNumber = number.replace(/[^\d]/g, '');
+            
+            // Validate phone number
+            if (!formattedNumber || formattedNumber.length < 10) {
+                return res.status(400).json({ 
+                    error: 'Invalid phone number. Must contain at least 10 digits.' 
+                });
+            }
+            
+            jid = formattedNumber + '@s.whatsapp.net';
+            recipientId = formattedNumber;
         }
-        
-        // Add @s.whatsapp.net suffix
-        const jid = formattedNumber + '@s.whatsapp.net';
         
         await sock.sendMessage(jid, { text: message });
         
         res.json({ 
             success: true, 
             message: 'Message sent successfully',
-            to: formattedNumber
+            to: recipientId,
+            type: isGroup ? 'group' : 'individual'
         });
     } catch (error) {
         console.error('Error sending message:', error);
